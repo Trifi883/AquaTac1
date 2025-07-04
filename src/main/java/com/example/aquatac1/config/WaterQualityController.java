@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+
 @RestController
 @RequestMapping("/api/water-quality")
 public class WaterQualityController {
@@ -21,8 +22,8 @@ public class WaterQualityController {
         this.firebaseService = firebaseService;
     }
 
-    @GetMapping("/locations")
-    public ResponseEntity<List<WaterQualityReading>> getAllLocations() {
+    @GetMapping("/readings")
+    public ResponseEntity<List<WaterQualityReading>> getAllReadings() {
         try {
             List<WaterQualityReading> readings = firebaseService.getAllLocationReadings().get();
             return ResponseEntity.ok(readings);
@@ -31,11 +32,11 @@ public class WaterQualityController {
         }
     }
 
-    @GetMapping("/locations/{locationId}")
-    public ResponseEntity<WaterQualityReading> getLocationReading(
-            @PathVariable String locationId) {
+    @GetMapping("/readings/{readingId}")
+    public ResponseEntity<WaterQualityReading> getReadingById(
+            @PathVariable String readingId) {
         try {
-            WaterQualityReading reading = firebaseService.getReadingByLocation(locationId).get();
+            WaterQualityReading reading = firebaseService.getReadingById(readingId).get();
             if (reading == null) {
                 return ResponseEntity.notFound().build();
             }
@@ -44,6 +45,7 @@ public class WaterQualityController {
             return ResponseEntity.internalServerError().build();
         }
     }
+
     @GetMapping("/safety-analysis")
     public ResponseEntity<List<Map<String, Object>>> getSafetyAnalysis(
             @RequestParam(required = false) Boolean safeForSwimming,
@@ -54,7 +56,7 @@ public class WaterQualityController {
             @RequestParam(required = false) Double maxPh,
             @RequestParam(required = false) Double maxTurbidity,
             @RequestParam(required = false) Double minDissolvedOxygen,
-            @RequestParam(required = false) Double minWaterQualityScore) {  // New parameter
+            @RequestParam(required = false) Double minWaterQualityScore) {
 
         try {
             List<Map<String, Object>> results = firebaseService
@@ -88,12 +90,12 @@ public class WaterQualityController {
         }
     }
 
-    @GetMapping("/locations/{locationId}/safety")
-    public ResponseEntity<Map<String, Boolean>> getLocationSafety(
-            @PathVariable String locationId) {
+    @GetMapping("/readings/{readingId}/safety")
+    public ResponseEntity<Map<String, Boolean>> getReadingSafety(
+            @PathVariable String readingId) {
         try {
             WaterQualityReading reading = firebaseService
-                    .getReadingByLocation(locationId)
+                    .getReadingById(readingId)
                     .get();
 
             if (reading == null) {
@@ -112,8 +114,8 @@ public class WaterQualityController {
         }
     }
 
-    @GetMapping("/top-locations")
-    public ResponseEntity<List<Map<String, Object>>> getTopLocationsByWaterQuality(
+    @GetMapping("/top-readings")
+    public ResponseEntity<List<Map<String, Object>>> getTopReadingsByWaterQuality(
             @RequestParam(defaultValue = "10") int limit) {
         try {
             List<Map<String, Object>> results = firebaseService
@@ -137,26 +139,52 @@ public class WaterQualityController {
         }
     }
 
-    @GetMapping("/locations/{locationId}/water-quality-score")
-    public ResponseEntity<Map<String, Object>> getWaterQualityScoreByLocation(
-            @PathVariable String locationId) {
+    @GetMapping("/readings/{readingId}/water-quality-score")
+    public ResponseEntity<Map<String, Object>> getWaterQualityScore(
+            @PathVariable String readingId) {
         try {
-            Double score = firebaseService.getWaterQualityScoreByLocationId(locationId).get();
+            Double score = firebaseService.getWaterQualityScoreById(readingId).get();
 
             if (score == null) {
                 return ResponseEntity.notFound().build();
             }
 
             Map<String, Object> response = new HashMap<>();
-            response.put("locationId", locationId);
+            response.put("readingId", readingId);
             response.put("waterQualityScore", score);
-
-            // You can also include the score interpretation if you want
             response.put("qualityLevel", interpretWaterQualityScore(score));
 
             return ResponseEntity.ok(response);
         } catch (InterruptedException | ExecutionException e) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/readings/location/{locationName}")
+    public ResponseEntity<List<WaterQualityReading>> getReadingsByLocationName(
+            @PathVariable String locationName) {
+        try {
+            List<WaterQualityReading> readings = firebaseService.getReadingsByLocationName(locationName).get();
+            return ResponseEntity.ok(readings);
+        } catch (InterruptedException | ExecutionException e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @PostMapping("/readings")
+    public ResponseEntity<Map<String, Object>> addReading(@RequestBody WaterQualityReading reading) {
+        try {
+            String readingId = firebaseService.addReading(reading).get();
+            Map<String, Object> response = new HashMap<>();
+            response.put("status", "success");
+            response.put("readingId", readingId);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (InterruptedException | ExecutionException e) {
+            return ResponseEntity.internalServerError()
+                    .body(Map.of(
+                            "status", "error",
+                            "message", "Failed to add reading"
+                    ));
         }
     }
 
@@ -167,33 +195,30 @@ public class WaterQualityController {
         if (score >= 25) return "Poor";
         return "Very Poor";
     }
-    @GetMapping("/locations/find-id-by-name/{locationName}")
-    public ResponseEntity<?> getLocationIdByName(
-            @PathVariable String locationName) {
 
+    // Add these new endpoints to your controller
+
+    @GetMapping("/history/all")
+    public ResponseEntity<List<WaterQualityReading>> getAllLocationsHistory() {
         try {
-            String locationId = firebaseService.getLocationIdByName(locationName).get();
-
-            if (locationId == null) {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of(
-                                "status", "error",
-                                "message", "Location not found with name: " + locationName
-                        ));
-            }
-
-            return ResponseEntity.ok(Map.of(
-                    "status", "success",
-                    "locationName", locationName,
-                    "locationId", locationId
-            ));
-
+            List<WaterQualityReading> history = firebaseService.getHistoryForAllLocations().get();
+            return ResponseEntity.ok(history);
         } catch (InterruptedException | ExecutionException e) {
-            return ResponseEntity.internalServerError()
-                    .body(Map.of(
-                            "status", "error",
-                            "message", "Failed to retrieve location data"
-                    ));
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    @GetMapping("/history/{locationName}")
+    public ResponseEntity<List<WaterQualityReading>> getLocationHistory(
+            @PathVariable String locationName) {
+        try {
+            List<WaterQualityReading> history = firebaseService.getHistoryForLocation(locationName).get();
+            if (history.isEmpty()) {
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(history);
+        } catch (InterruptedException | ExecutionException e) {
+            return ResponseEntity.internalServerError().build();
         }
     }
 }

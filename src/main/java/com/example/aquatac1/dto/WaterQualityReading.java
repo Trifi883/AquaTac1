@@ -1,55 +1,112 @@
 package com.example.aquatac1.dto;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
 public class WaterQualityReading {
-    private String locationId;
-    private String locationName;
+    private String readingId;  // Changed from locationId to readingId (the push ID)
+    private String location;   // Changed from locationName to location (matches DB field)
     private Double temperature;
     private Double ph;
     private Double turbidity;
     private Double dissolvedOxygen;
     private String timestamp;
-    private Integer id;
+    private Integer id;        // Optional: Keep if you still need this numeric ID
     private boolean safeForSwimming;
     private boolean safeForFishing;
+    private double waterQualityScore;
 
     // Constructors
     public WaterQualityReading() {}
-    private double waterQualityScore;
 
     // Getters and Setters
-    public String getLocationId() { return locationId; }
-    public void setLocationId(String locationId) { this.locationId = locationId; }
+    public String getReadingId() {
+        return readingId;
+    }
 
-    public String getLocationName() { return locationName; }
-    public void setLocationName(String locationName) { this.locationName = locationName; }
+    public void setReadingId(String readingId) {
+        this.readingId = readingId;
+    }
 
-    public Double getTemperature() { return temperature; }
-    public void setTemperature(Double temperature) { this.temperature = temperature; }
+    public String getLocation() {
+        return location;
+    }
 
-    public Double getPh() { return ph; }
-    public void setPh(Double ph) { this.ph = ph; }
+    public void setLocation(String location) {
+        this.location = location;
+    }
 
-    public Double getTurbidity() { return turbidity; }
-    public void setTurbidity(Double turbidity) { this.turbidity = turbidity; }
+    public Double getTemperature() {
+        return temperature;
+    }
 
-    public Double getDissolvedOxygen() { return dissolvedOxygen; }
-    public void setDissolvedOxygen(Double dissolvedOxygen) { this.dissolvedOxygen = dissolvedOxygen; }
+    public void setTemperature(Double temperature) {
+        this.temperature = temperature;
+    }
 
-    public String getTimestamp() { return timestamp; }
-    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+    public Double getPh() {
+        return ph;
+    }
 
-    public Integer getId() { return id; }
-    public void setId(Integer id) { this.id = id; }
+    public void setPh(Double ph) {
+        this.ph = ph;
+    }
 
-    public boolean isSafeForSwimming() { return safeForSwimming; }
+    public Double getTurbidity() {
+        return turbidity;
+    }
+
+    public void setTurbidity(Double turbidity) {
+        this.turbidity = turbidity;
+    }
+
+    public Double getDissolvedOxygen() {
+        return dissolvedOxygen;
+    }
+
+    public void setDissolvedOxygen(Double dissolvedOxygen) {
+        this.dissolvedOxygen = dissolvedOxygen;
+    }
+
+    public String getTimestamp() {
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) {
+        this.timestamp = timestamp;
+    }
+
+    // Helper method to get timestamp as LocalDateTime
+    public LocalDateTime getTimestampAsDateTime() {
+        if (timestamp == null) return null;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        return LocalDateTime.parse(timestamp, formatter);
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public boolean isSafeForSwimming() {
+        return safeForSwimming;
+    }
+
     public void setSafeForSwimming(boolean safeForSwimming) {
         this.safeForSwimming = safeForSwimming;
     }
 
-    public boolean isSafeForFishing() { return safeForFishing; }
+    public boolean isSafeForFishing() {
+        return safeForFishing;
+    }
+
     public void setSafeForFishing(boolean safeForFishing) {
         this.safeForFishing = safeForFishing;
     }
+
     public double getWaterQualityScore() {
         return waterQualityScore;
     }
@@ -57,6 +114,7 @@ public class WaterQualityReading {
     public void setWaterQualityScore(double waterQualityScore) {
         this.waterQualityScore = waterQualityScore;
     }
+
     // Method to calculate safety
     public void calculateSafety() {
         // Swimming safety criteria
@@ -70,5 +128,22 @@ public class WaterQualityReading {
                 (ph != null && ph >= 6 && ph <= 9) &&
                 (turbidity != null && turbidity <= 10) &&
                 (dissolvedOxygen != null && dissolvedOxygen >= 4);
+    }
+
+    @Override
+    public String toString() {
+        return "WaterQualityReading{" +
+                "readingId='" + readingId + '\'' +
+                ", location='" + location + '\'' +
+                ", temperature=" + temperature +
+                ", ph=" + ph +
+                ", turbidity=" + turbidity +
+                ", dissolvedOxygen=" + dissolvedOxygen +
+                ", timestamp='" + timestamp + '\'' +
+                ", id=" + id +
+                ", safeForSwimming=" + safeForSwimming +
+                ", safeForFishing=" + safeForFishing +
+                ", waterQualityScore=" + waterQualityScore +
+                '}';
     }
 }
